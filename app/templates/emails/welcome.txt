@@ -1,0 +1,31 @@
+Welcome to {{ site_name }}!
+
+Hello {{ user.first_name }},
+
+Thank you for joining {{ site_name }}! We're excited to have you on board.
+
+With your new account, you can:
+- Access exclusive content and resources
+- Manage your profile and preferences
+- And much more!
+
+{% if password %}
+---
+YOUR ACCOUNT DETAILS:
+Username: {{ user.username }}
+Password: {{ password }}
+
+Please change your password after logging in for the first time.
+---
+
+To get started, visit: {{ base_url }}/login
+{% endif %}
+
+If you have any questions or need assistance, please don't hesitate to contact our support team.
+
+Best regards,
+The {{ site_name }} Team
+
+---
+© {{ now.year }} {{ site_name }}. All rights reserved.
+This email was sent to {{ user.email }} as part of your {{ site_name }} membership.
