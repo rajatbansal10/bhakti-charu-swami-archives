@@ -2,281 +2,222 @@
 
 A modern web application for managing and sharing spiritual content including audio, images, PDFs, and videos.
 
-## Features
+## 🚀 Quick Start
 
-- **User Authentication**: Secure login with username/password or email OTP
-- **Role-Based Access Control**: Different permission levels for viewers, uploaders, editors, and admins
-- **Media Management**: Upload, organize, and manage various media types
-- **Full-Text Search**: Powerful search functionality across all content
-- **Responsive Design**: Works on desktop and mobile devices
-- **Audit Logging**: Track all important actions in the system
-
-## Tech Stack
-
-- **Backend**: Python 3.12, FastAPI, SQLAlchemy, Pydantic v2
-- **Database**: SQLite (development), PostgreSQL (production)
-- **Storage**: S3-compatible object storage (e.g., AWS S3, MinIO, Ceph)
-- **Frontend**: Jinja2 templates, HTMX, Tailwind CSS, Alpine.js
-- **Containerization**: Docker
-
-## Prerequisites
-
+### Prerequisites
 - Python 3.12+
-- Docker and Docker Compose (for containerized deployment)
-- S3-compatible storage (e.g., AWS S3, MinIO, Ceph)
-- SMTP server for email notifications
+- PostgreSQL (recommended) or SQLite
+- Node.js 18+ (for frontend assets)
+- Redis (for caching and background tasks)
 
-## Getting Started
-
-### 1. Clone the repository
+### 1. Clone and Setup
 
 ```bash
+# Clone the repository
 git clone <repository-url>
 cd veda-foundation-archives
-```
 
-### 2. Set up environment variables
-
-#### Windows (PowerShell)
-```powershell
-# Copy the example environment file
-Copy-Item .env.example .env
-
-# Edit the .env file with your configuration
-notepad .env
-```
-
-#### Linux/macOS
-```bash
-# Copy the example environment file
-cp .env.example .env
-
-# Edit the .env file with your configuration
-nano .env  # or use your preferred text editor
-```
-
-Edit the `.env` file with your configuration:
-
-```env
-# Application
-APP_NAME="Veda Foundation — Bhakti Charu Swami Archives"
-APP_ENV=dev
-SECRET_KEY=your-secret-key-here
-
-# Database
-DATABASE_URL=sqlite:///./local.db
-# For production: postgresql+psycopg://user:password@localhost:5432/veda
-
-# S3 Storage
-S3_ENDPOINT_URL=https://your-s3-endpoint.com
-S3_REGION=us-east-1
-S3_BUCKET=veda-archives
-AWS_ACCESS_KEY_ID=your-access-key
-AWS_SECRET_ACCESS_KEY=your-secret-key
-
-# Email
-SMTP_HOST=smtp.example.com
-SMTP_PORT=587
-SMTP_USER=your-email@example.com
-SMTP_PASS=your-email-password
-SMTP_FROM="Veda Foundation <noreply@vedafoundation.org>"
-
-# Security
-SESSION_SECRET=your-session-secret
-```
-
-### 3. Install Dependencies
-
-#### Windows (PowerShell)
-```powershell
-# Create a virtual environment
+# Create and activate virtual environment
 python -m venv .venv
-
-# Activate the virtual environment
-.\\.venv\\Scripts\\Activate.ps1
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
-#### Linux/macOS
-```bash
-# Create a virtual environment
-python3 -m venv .venv
-
-# Activate the virtual environment
+# Windows
+.venv\Scripts\activate
+# Linux/macOS
 source .venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
 ```
 
-### 4. Initialize the Database
+### 2. Configure Environment
 
-#### Windows (PowerShell)
-```powershell
-# Apply database migrations
+Copy the example environment file and update it:
+
+```bash
+# Copy example config
+cp .env.example .env
+```
+
+Edit `.env` with your settings:
+
+```ini
+# App Settings
+APP_ENV=development
+SECRET_KEY=your-secret-key
+
+# Database (choose one)
+DATABASE_URL=sqlite+aiosqlite:///./local.db  # For development
+# DATABASE_URL=postgresql+asyncpg://user:pass@localhost/veda_archives  # For production
+
+# Redis
+REDIS_URL=redis://localhost:6379/0
+
+# Storage (S3 or local)
+STORAGE_TYPE=local  # or 's3'
+LOCAL_STORAGE_PATH=./storage
+# S3_* settings required if using S3
+
+# Email (required for password reset)
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=user@example.com
+SMTP_PASS=your-password
+SMTP_FROM="Veda Foundation <noreply@vedafoundation.org>"
+```
+
+### 3. Database Setup
+
+#### Option A: SQLite (Development)
+```bash
+# No additional setup needed for SQLite
+```
+
+#### Option B: PostgreSQL (Production)
+1. Install PostgreSQL
+2. Create database and user:
+   ```sql
+   CREATE DATABASE veda_archives;
+   CREATE USER veda_user WITH PASSWORD 'secure_password';
+   GRANT ALL PRIVILEGES ON DATABASE veda_archives TO veda_user;
+   ```
+
+### 4. Run Migrations
+
+```bash
+# Initialize Alembic (first time only)
+alembic init -t async alembic
+
+# Edit alembic.ini and alembic/env.py as shown below
+```
+
+In `alembic.ini`:
+```ini
+sqlalchemy.url = postgresql+asyncpg://user:pass@localhost/veda_archives
+# or for SQLite:
+# sqlalchemy.url = sqlite+aiosqlite:///./local.db
+```
+
+In `alembic/env.py`:
+```python
+from app.models import Base
+target_metadata = Base.metadata
+```
+
+Then run migrations:
+```bash
 alembic upgrade head
+```
 
-# Create initial admin user
+### 5. Create Admin User
+
+```bash
 python -m app.scripts.create_admin
 ```
 
-#### Linux/macOS
-```bash
-# Apply database migrations
-alembic upgrade head
-
-# Create initial admin user
-python3 -m app.scripts.create_admin
-```
-
-### 5. Run the Development Server
-
-#### Windows (PowerShell)
-```powershell
-# Make sure your virtual environment is activated
-.\\.venv\\Scripts\\Activate.ps1
-
-# Run the development server
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-#### Linux/macOS
-```bash
-# Make sure your virtual environment is activated
-source .venv/bin/activate
-
-# Run the development server
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-The application will be available at:
-- http://localhost:8000 (main application)
-- http://localhost:8000/docs (API documentation)
-- http://localhost:8000/admin (Admin interface)
-
-### Common Issues and Solutions
-
-#### Port Already in Use
-If you get an error that port 8000 is in use, you can:
-1. Stop the existing process using port 8000:
-   ```bash
-   # Linux/macOS
-   sudo lsof -i :8000
-   kill -9 <PID>
-   
-   # Windows
-   netstat -ano | findstr :8000
-   taskkill /PID <PID> /F
-   ```
-2. Or run the server on a different port:
-   ```bash
-   uvicorn app.main:app --reload --port 8001
-   ```
-
-#### Missing Dependencies
-If you encounter missing module errors, make sure to:
-1. Activate your virtual environment
-2. Install all requirements:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. For Windows-specific dependencies, you might need:
-   ```powershell
-   pip install python-magic-bin
-   ```
-
-#### Database Issues
-If you have database connection problems:
-1. Make sure your database server is running
-2. Verify the connection string in `.env`
-3. Try recrecing the database:
-   ```bash
-   # Delete the database file (SQLite)
-   rm instance/local.db
-   
-   # Recreate and apply migrations
-   alembic upgrade head
-   ```
-
-## Deployment
-
-### Docker Compose (Recommended for Production)
-
-1. Update the `.env` file with your production settings
-2. Run the following commands:
+### 6. Start Development Server
 
 ```bash
-docker-compose build
-docker-compose up -d
+uvicorn app.main:app --reload
+```
+
+Access the application at http://localhost:8000
+
+## 🛠 Project Structure
+
+```
+.
+├── app/                      # Application code
+│   ├── api/                  # API endpoints
+│   ├── core/                 # Core functionality
+│   ├── db/                   # Database configuration
+│   ├── models/               # SQLAlchemy models
+│   ├── schemas/              # Pydantic models
+│   ├── services/             # Business logic
+│   ├── static/               # Static files
+│   ├── templates/            # Jinja2 templates
+│   └── utils/                # Utility functions
+├── alembic/                  # Database migrations
+├── tests/                    # Test files
+├── .env.example              # Example environment config
+└── requirements.txt          # Python dependencies
+```
+
+## 🧪 Testing
+
+### Running Tests
+
+Run the full test suite with coverage:
+
+```bash
+# Install test dependencies
+pip install -r requirements-dev.txt
+
+# Run all tests with coverage
+pytest --cov=app --cov-report=term-missing
+
+# Run a specific test file
+pytest tests/test_models/test_user.py -v
+
+# Run tests with coverage report in HTML
+pytest --cov=app --cov-report=html
+# Open htmlcov/index.html in your browser
+```
+
+### Test Organization
+
+- Unit tests are in `tests/unit/`
+- Integration tests are in `tests/integration/`
+- End-to-end tests are in `tests/e2e/`
+- Fixtures and configuration are in `tests/conftest.py`
+
+### Writing Tests
+
+- Use descriptive test function names starting with `test_`
+- Group related tests in classes
+- Use fixtures for common test data
+- Mock external services
+- Follow the Arrange-Act-Assert pattern
+
+### Code Quality
+
+Run code quality checks:
+
+```bash
+# Format code with Black
+black .
+
+# Sort imports with isort
+isort .
+
+# Check for style issues with flake8
+flake8
+
+# Run type checking with mypy
+mypy .
+
+# Check for security issues with bandit
+bandit -r app/
+```
+
+## 🚀 Deployment
+
+### Production with Docker
+
+```bash
+docker-compose -f docker-compose.prod.yml up -d
 ```
 
 ### Manual Deployment
 
-1. Set up a PostgreSQL database
-2. Configure a reverse proxy (Nginx/Apache) with SSL
-3. Set up a process manager (e.g., systemd, Supervisor)
-4. Configure your S3-compatible storage
-5. Deploy the application using your preferred method (e.g., Git, CI/CD)
+1. Set up a production-ready WSGI server (Uvicorn + Gunicorn)
+2. Configure Nginx as reverse proxy
+3. Set up process manager (systemd/PM2)
+4. Enable HTTPS with Let's Encrypt
 
-## Development
+## 📝 License
 
-### Running Tests
+This project is licensed under the MIT License.
 
-```bash
-pytest
-```
-
-### Code Style
-
-This project uses:
-- Black for code formatting
-- isort for import sorting
-- flake8 for linting
-
-Run the following commands before committing:
-
-```bash
-black .
-isort .
-flake8
-```
-
-## Project Structure
-
-```
-.
-├── alembic/                  # Database migrations
-├── app/                      # Application code
-│   ├── api/                  # API routes
-│   ├── auth/                 # Authentication and authorization
-│   ├── core/                 # Core functionality
-│   ├── db/                   # Database configuration
-│   ├── models/               # Database models
-│   ├── schemas/              # Pydantic models
-│   ├── services/             # Business logic
-│   ├── static/               # Static files (CSS, JS, images)
-│   ├── templates/            # Jinja2 templates
-│   ├── utils/                # Utility functions
-│   ├── config.py             # Application configuration
-│   └── main.py               # FastAPI application
-├── tests/                    # Test files
-├── .env.example              # Example environment variables
-├── .gitignore                # Git ignore file
-├── alembic.ini               # Alembic configuration
-├── docker-compose.yml         # Docker Compose configuration
-├── Dockerfile                # Docker configuration
-├── pyproject.toml            # Project metadata and dependencies
-├── README.md                 # This file
-└── requirements.txt          # Python dependencies
-```
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
+## 🙏 Acknowledgments
 
 - [FastAPI](https://fastapi.tiangolo.com/)
 - [SQLAlchemy](https://www.sqlalchemy.org/)
